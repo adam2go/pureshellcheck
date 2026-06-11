@@ -154,19 +154,15 @@ def braced_index(content):
 
 
 def is_array_expansion(part):
-    """${a[@]}, ${a[*]}, $@, $*, ${!a[@]} etc."""
+    """$@, ${a[@]} and friends ($* joins to a string, so it's excluded)."""
     if part.kind != "T_DollarBraced":
         return False
     content = part.content
-    name = braced_reference(content)
-    if content.startswith("!") and not content.startswith("!!"):
-        if content.endswith("[@]") or content.endswith("[*]") \
-                or content.rstrip("@*") != content:
-            return True
-    if name in ("@", "*") and not content.startswith("#"):
+    if content.startswith("#"):
+        return False
+    if content.startswith("@"):
         return True
-    idx = braced_index(content)
-    return idx in ("@", "*") and not content.startswith("#")
+    return "[@]" in content
 
 
 def is_counting_reference(part):

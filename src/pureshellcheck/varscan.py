@@ -368,7 +368,7 @@ class VarScan:
                 if t and not t.startswith("-"):
                     name = t.split("[", 1)[0]
                     if NAME_RE.match(name):
-                        self._ref(name, w)
+                        self._ref(name, w, "guarded")
         elif cmd in ("trap", "alias"):
             self._scan_quoted_refs(args)
         elif cmd.startswith("DEFINE_") and cmd[7:] in (

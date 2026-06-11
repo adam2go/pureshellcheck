@@ -78,6 +78,9 @@ def check_unused_assignments(ctx, root):
         if a.kind == "checked":
             referenced.add(a.name)
             continue
+        if _is_env_prefix_assignment(a.node):
+            referenced.add(a.name)
+            continue
         if a.name not in first_assign:
             first_assign[a.name] = a
     for name, a in sorted(first_assign.items(),
@@ -130,6 +133,22 @@ def check_unassigned_references(ctx, root):
             if match:
                 ctx.info(ref.node, 2153, "Possible misspelling: %s may not"
                          " be assigned. Did you mean %s?" % (name, match))
+
+
+def _is_env_prefix_assignment(node):
+    """FOO=bar somecommand: the assignment is for the command's env."""
+    if node.kind != "T_Assignment":
+        return False
+    parent = node.parent
+    if parent is None or parent.kind != "T_SimpleCommand":
+        return False
+    if node not in parent.assigns or not parent.words:
+        return False
+    from ..parser import literal_text
+    cmd = literal_text(parent.words[0])
+    if cmd:
+        cmd = cmd.rsplit("/", 1)[-1]
+    return cmd not in ("declare", "typeset", "local", "export", "readonly")
 
 
 def _best_match(var, candidates):
@@ -241,11 +260,8 @@ def check_array_without_index(ctx, root):
                 is_arr = True
             events.append((node.end, "array" if is_arr else "string",
                            a.name, node, a.append))
-        else:
-            if a.is_array:
-                events.append((node.end, "array", a.name, node, False))
-            elif a.kind not in ("checked", "declare"):
-                events.append((node.end, "string", a.name, node, False))
+        elif a.is_array:
+            events.append((node.end, "array", a.name, node, False))
     for ref in scan.refs:
         node = ref.node
         if node.kind != "T_DollarBraced":
@@ -304,11 +320,12 @@ def check_masked_returns(ctx, node):
     is_readonly = name == "readonly" or "r" in flags
     if is_local and is_readonly:
         return
+    from ..astlib import expanded_parts
     for assign in node.assigns:
         value = assign.get("value")
         if value is None:
             continue
-        for p in walk(value):
+        for p in expanded_parts(value):
             if p.kind in ("T_DollarExpansion", "T_Backticked",
                           "T_DollarBraceCommandExpansion"):
                 ctx.warn(assign, 2155, "Declare and assign separately to"

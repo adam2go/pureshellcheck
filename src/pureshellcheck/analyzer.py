@@ -31,7 +31,9 @@ class Finding:
 
 NODE_CHECKS = {}
 TREE_CHECKS = []
-OPTIONAL_CODES = frozenset({2248, 2250, 2312})
+# Checks that are opt-in in shellcheck 0.11 (quote-safe-variables,
+# require-variable-braces, useless-use-of-cat, ...)
+OPTIONAL_CODES = frozenset({2002, 2248, 2250, 2312})
 
 
 def node_check(*kinds):
