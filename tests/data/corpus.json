@@ -6773,6 +6773,7 @@
   "check": "checkUnassignedReferences",
   "expect": "trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "echo $foo"
@@ -6783,6 +6784,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "foo=hello; echo $foo"
@@ -6793,6 +6795,7 @@
   "check": "checkUnassignedReferences",
   "expect": "trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "MY_VALUE=3; echo $MYVALUE"
@@ -6803,6 +6806,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "RANDOM2=foo; echo $RANDOM"
@@ -6813,6 +6817,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "declare -A foo=([bar]=baz); echo ${foo[bar]}"
@@ -6823,6 +6828,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "foo=..; echo ${foo-bar}"
@@ -6833,6 +6839,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "getopts ':h' foo; echo $foo"
@@ -6843,6 +6850,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "let 'foo = 1'; echo $foo"
@@ -6853,6 +6861,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "echo ${foo-bar}"
@@ -6863,6 +6872,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "echo ${foo:?}"
@@ -6873,6 +6883,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "declare -A foo; echo \"${foo[@]}\""
@@ -6883,6 +6894,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "typeset -a foo; echo \"${foo[@]}\""
@@ -6893,6 +6905,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "f() { local foo; echo $foo; }"
@@ -6903,6 +6916,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "foo=; echo $foo"
@@ -6913,6 +6927,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "f() { true; }; export -f f"
@@ -6923,6 +6938,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "declare -A foo=( [a b]=bar ); echo ${foo[a b]}"
@@ -6933,6 +6949,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "USERS=foo; echo $USER"
@@ -6943,6 +6960,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "FOOBAR=42; export FOOBAR="
@@ -6953,6 +6971,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "readonly foo=bar; echo $foo"
@@ -6963,6 +6982,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "printf -v foo bar; echo $foo"
@@ -6973,6 +6993,7 @@
   "check": "checkUnassignedReferences",
   "expect": "trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "echo ${#foo}"
@@ -6983,6 +7004,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "echo ${!os*}"
@@ -6993,6 +7015,7 @@
   "check": "checkUnassignedReferences",
   "expect": "trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "declare -a foo; foo[bar]=42;"
@@ -7003,6 +7026,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "declare -A foo; foo[bar]=42;"
@@ -7013,6 +7037,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "declare -A foo=(); foo[bar]=42;"
@@ -7023,6 +7048,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "a::b() { foo; }; readonly -f a::b"
@@ -7033,6 +7059,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": ": ${foo:=bar}"
@@ -7043,6 +7070,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "#!/bin/ksh\necho \"${.sh.version}\"\n"
@@ -7053,6 +7081,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "if [[ -v foo ]]; then echo $foo; fi"
@@ -7063,6 +7092,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "if [[ -v foo[3] ]]; then echo ${foo[3]}; fi"
@@ -7073,6 +7103,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "X=1; if [[ -v foo[$X+42] ]]; then echo ${foo[$X+42]}; fi"
@@ -7083,6 +7114,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "if [[ -v \"foo[1]\" ]]; then echo ${foo[@]}; fi"
@@ -7093,6 +7125,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "f() { local -A foo; echo \"${foo[@]}\"; }"
@@ -7103,6 +7136,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "declare -A foo; (( foo[bar] ))"
@@ -7113,6 +7147,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "echo ${arr[foo-bar]:?fail}"
@@ -7123,6 +7158,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "read -a foo -r <<<\"foo bar\"; echo \"$foo\""
@@ -7133,6 +7169,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "var=howdy; printf -v 'array[0]' %s \"$var\"; printf %s \"${array[0]}\";"
@@ -7143,6 +7180,7 @@
   "check": "checkUnassignedReferences",
   "expect": "trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "echo $VAR"
@@ -7153,6 +7191,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "builtin export var=4; echo $var"
@@ -7163,6 +7202,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": ": ${foo=bar}"
@@ -7173,6 +7213,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "mapfile -t files 123; echo \"${files[@]}\""
@@ -7183,6 +7224,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "mapfile files -t; echo \"${files[@]}\""
@@ -7193,6 +7235,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "mapfile --future files; echo \"${files[@]}\""
@@ -7203,6 +7246,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "if [ -n \"$x\" ]; then echo $x; fi"
@@ -7213,6 +7257,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "if [ -z \"$x\" ]; then echo \"\"; fi"
@@ -7223,6 +7268,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "if [ -n \"${x}\" ]; then echo $x; fi"
@@ -7233,6 +7279,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "if [ -z \"${x}\" ]; then echo \"\"; fi"
@@ -7243,6 +7290,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "if [ -n \"${x:-}\" ]; then echo $x; fi"
@@ -7253,6 +7301,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "if [ -z \"${x:-}\" ]; then echo \"\"; fi"
@@ -7263,6 +7312,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "echo ${foo:+bar}"
@@ -7273,6 +7323,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "echo ${foo:+$foo}"
@@ -7283,6 +7334,7 @@
   "check": "checkUnassignedReferences",
   "expect": "no-trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "wait -p pid; echo $pid"
@@ -7293,6 +7345,7 @@
   "check": "checkUnassignedReferences",
   "expect": "trigger",
   "codes": [
+   2153,
    2154
   ],
   "script": "x=($foo)"

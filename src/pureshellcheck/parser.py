@@ -629,14 +629,15 @@ class Parser:
         self.skip_inline_ws()
         if self.peek() == "(" and self.peek(1) == ")":
             self.i += 2
-        return self.finish_function(start, name)
+        return self.finish_function(start, name, keyword_form=True)
 
-    def finish_function(self, start, name):
+    def finish_function(self, start, name, keyword_form=False):
         self.skip_ws_and_newlines()
         body = self.read_command()
         if body is None:
             self.error("expected a function body")
-        return Node("T_Function", start, self.i, name=name, body=body)
+        return Node("T_Function", start, self.i, name=name, body=body,
+                    keyword_form=keyword_form)
 
     COMPOUND_STARTERS = {"{", "if", "while", "until", "for", "case",
                          "select", "[["}
@@ -693,6 +694,7 @@ class Parser:
         words = []
         redirects = []
         is_declare = False
+        expecting_cmd = True
         while True:
             self.skip_inline_ws()
             if self.at_end():
@@ -729,8 +731,13 @@ class Parser:
                         self.i += 1
                         return self.finish_function(start, lit)
                     self.i = save
+            if expecting_cmd:
+                lit = literal_text(word)
                 if lit in self.DECLARE_COMMANDS:
                     is_declare = True
+                    expecting_cmd = False
+                elif lit not in ("builtin", "command"):
+                    expecting_cmd = False
             words.append(word)
         if not (assigns or words or redirects):
             return None
@@ -1769,13 +1776,9 @@ class Parser:
                         continue
                     if op == "&" and after == "&":
                         continue
-                    if op in ("+", "-") and after == op:
-                        # ++/-- handled at unary level; but binary a+ +b?
-                        # disambiguate: treat as increment only when not
-                        # followed by operand... keep simple: binary.
-                        pass
-                    if op == "=" or (op in ("<<", ">>") and after == "="):
-                        continue
+                    if after == "=" and op in ("+", "-", "*", "/", "%",
+                                               "&", "|", "^", "<<", ">>"):
+                        continue  # compound assignment, not binary op
                     matched = op
                     break
             if matched is None:

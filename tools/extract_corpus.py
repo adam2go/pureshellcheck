@@ -34,7 +34,7 @@ CODE_RE = re.compile(r"(?<![\d.])([123]\d{3})(?![\d.])")
 FALLBACK_CODES = {
     "subshellAssignmentCheck": [2030, 2031],
     "checkSpacefulnessCfg": [2086, 2223],
-    "checkUnassignedReferences": [2154],
+    "checkUnassignedReferences": [2153, 2154],
     "checkVerboseSpacefulnessCfg": [2248, 2250],
 }
 
