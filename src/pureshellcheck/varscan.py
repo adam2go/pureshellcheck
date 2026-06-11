@@ -491,9 +491,12 @@ def _flag_arg_attached(flag):
     return False
 
 
-def levenshtein(a, b):
+def levenshtein(a, b, cap=3):
+    """Edit distance, returning `cap` early once it can't be beaten."""
     if a == b:
         return 0
+    if abs(len(a) - len(b)) >= cap:
+        return cap
     if len(a) > len(b):
         a, b = b, a
     prev = list(range(len(a) + 1))
@@ -502,5 +505,7 @@ def levenshtein(a, b):
         for j, ca in enumerate(a):
             cur.append(min(prev[j + 1] + 1, cur[j] + 1,
                            prev[j] + (ca != cb)))
+        if min(cur) >= cap:
+            return cap
         prev = cur
     return prev[-1]

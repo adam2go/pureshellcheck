@@ -159,6 +159,8 @@ def _best_match(var, candidates):
             continue
         if c.lower() == var.lower():
             score = 1
+        elif abs(len(c) - len(var)) > 2:
+            continue
         else:
             score = levenshtein(var, c)
         if score < best_score:
