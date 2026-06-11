@@ -43,19 +43,20 @@ class Assign:
 
 
 class VarScan:
-    def __init__(self, root, shell="bash"):
+    def __init__(self, root, shell="bash", nodes=None):
         self.refs = []
         self.assigns = []
         self.assoc_arrays = set()
         self._suppressed = set()
         self.root = root
         self.shell = shell
+        self.nodes = nodes if nodes is not None else list(walk(root))
         self._prescan_assoc()
         self._scan()
 
     def _prescan_assoc(self):
         """Find `declare -A name` declarations before the main scan."""
-        for node in walk(self.root):
+        for node in self.nodes:
             if node.kind != "T_SimpleCommand" or not node.words:
                 continue
             cmd = literal_text(node.words[0])
@@ -73,12 +74,19 @@ class VarScan:
 
     # ------------------------------------------------------------------
 
+    _METHOD_CACHE = {}
+
     def _scan(self):
-        for node in walk(self.root):
+        methods = self._METHOD_CACHE
+        cls = type(self)
+        for node in self.nodes:
             k = node.kind
-            method = getattr(self, "_scan_" + k, None)
+            method = methods.get(k, False)
+            if method is False:
+                method = getattr(cls, "_scan_" + k, None)
+                methods[k] = method
             if method is not None:
-                method(node)
+                method(self, node)
 
     def _ref(self, name, node, kind="normal"):
         self.refs.append(Ref(name, node, kind))
@@ -492,20 +500,35 @@ def _flag_arg_attached(flag):
 
 
 def levenshtein(a, b, cap=3):
-    """Edit distance, returning `cap` early once it can't be beaten."""
+    """Banded edit distance: O(len * cap), returns `cap` once unbeatable."""
     if a == b:
         return 0
-    if abs(len(a) - len(b)) >= cap:
+    la, lb = len(a), len(b)
+    if abs(la - lb) >= cap:
         return cap
-    if len(a) > len(b):
-        a, b = b, a
-    prev = list(range(len(a) + 1))
-    for i, cb in enumerate(b):
-        cur = [i + 1]
-        for j, ca in enumerate(a):
-            cur.append(min(prev[j + 1] + 1, cur[j] + 1,
-                           prev[j] + (ca != cb)))
-        if min(cur) >= cap:
+    if la > lb:
+        a, b, la, lb = b, a, lb, la
+    if la == 0:
+        return lb if lb < cap else cap
+    band = cap - 1
+    INF = cap + 1
+    prev = [j if j <= band else INF for j in range(la + 1)]
+    for i in range(1, lb + 1):
+        cb = b[i - 1]
+        lo = max(1, i - band)
+        hi = min(la, i + band)
+        cur = [INF] * (la + 1)
+        if lo == 1:
+            cur[0] = i if i <= band else INF
+        best = INF
+        for j in range(lo, hi + 1):
+            c = min(prev[j] + 1, cur[j - 1] + 1,
+                    prev[j - 1] + (a[j - 1] != cb))
+            cur[j] = c
+            if c < best:
+                best = c
+        if best >= cap:
             return cap
         prev = cur
-    return prev[-1]
+    d = prev[la]
+    return d if d < cap else cap

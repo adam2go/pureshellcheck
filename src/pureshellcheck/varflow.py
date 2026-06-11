@@ -22,12 +22,9 @@ EXIT_COMMANDS = {"exit", "return"}
 DECLARING_COMMANDS = {"declare", "typeset", "local", "export", "readonly"}
 
 
-class VarInfo:
-    __slots__ = ("status", "integer")
-
-    def __init__(self, status, integer=False):
-        self.status = status
-        self.integer = integer
+def VarInfo(status, integer=False):
+    """Variable state as an immutable (status, integer) tuple."""
+    return (status, integer)
 
 
 class Scope:
@@ -83,21 +80,20 @@ class VarFlow:
                     break
         old = scope.vars.get(name)
         if integer is None:
-            integer = old.integer if old is not None else False
+            integer = old[1] if old is not None else False
         elif self.conditional_depth:
             # attribute only maybe applied: keep the weaker assumption
-            integer = integer and (old.integer if old is not None else False)
+            integer = integer and (old[1] if old is not None else False)
         if integer and status == DIRTY:
             status = CLEAN
         if self.conditional_depth and old is not None:
-            status = merge_status(old.status, status)
+            status = merge_status(old[0], status)
         elif self.conditional_depth and old is None:
             status = DIRTY
-        scope.vars[name] = VarInfo(status, integer)
+        scope.vars[name] = (status, integer)
 
     def snapshot(self):
-        return [dict((k, VarInfo(v.status, v.integer))
-                     for k, v in s.vars.items()) for s in self.scopes]
+        return [dict(s.vars) for s in self.scopes]
 
     def restore(self, snap):
         for scope, vars_ in zip(self.scopes, snap):
@@ -107,20 +103,41 @@ class VarFlow:
         """Merge variable states from multiple branches (worst case)."""
         merged = []
         for level in range(len(self.scopes)):
+            dicts = [snap[level] for snap in snaps]
+            if len(dicts) == 2:
+                d1, d2 = dicts
+                if d1 == d2:
+                    merged.append(dict(d1))
+                    continue
+                vars_ = {}
+                for name, i1 in d1.items():
+                    i2 = d2.get(name)
+                    if i2 is None:
+                        vars_[name] = (merge_status(i1[0], DIRTY), False)
+                    elif i1 == i2:
+                        vars_[name] = i1
+                    else:
+                        vars_[name] = (merge_status(i1[0], i2[0]),
+                                       i1[1] and i2[1])
+                for name, i2 in d2.items():
+                    if name not in d1:
+                        vars_[name] = (merge_status(i2[0], DIRTY), False)
+                merged.append(vars_)
+                continue
             allnames = set()
-            for snap in snaps:
-                allnames.update(snap[level])
+            for d in dicts:
+                allnames.update(d)
             vars_ = {}
             for name in allnames:
-                infos = [snap[level].get(name) for snap in snaps]
                 status = None
                 integer = True
-                for info in infos:
-                    s = info.status if info is not None else DIRTY
-                    i = info.integer if info is not None else False
+                for d in dicts:
+                    info = d.get(name)
+                    s = info[0] if info is not None else DIRTY
+                    i = info[1] if info is not None else False
                     status = s if status is None else merge_status(status, s)
                     integer = integer and i
-                vars_[name] = VarInfo(status, integer)
+                vars_[name] = (status, integer)
             merged.append(vars_)
         self.restore(merged)
 
@@ -136,9 +153,9 @@ class VarFlow:
         info = self.lookup(name)
         if info is None:
             return DIRTY, False
-        if info.integer:
+        if info[1]:
             return CLEAN, True
-        return info.status, False
+        return info[0], False
 
     def word_status(self, word):
         """SpaceStatus of a word's value (assignment RHS semantics)."""
@@ -249,7 +266,7 @@ class VarFlow:
             if assign.get("append"):
                 old = self.lookup(assign.name)
                 if old is not None:
-                    status = join_status(old.status, status)
+                    status = join_status(old[0], status)
             self.assign(assign.name, status, integer=integer,
                         local=is_local, global_="g" in flags)
             self.on_assign(assign.name, value, assign)
@@ -272,7 +289,7 @@ class VarFlow:
                         self.assign(t, DIRTY, integer=integer)
                     elif integer is not None:
                         old = self.lookup(t)
-                        self.assign(t, old.status if old else EMPTY,
+                        self.assign(t, old[0] if old else EMPTY,
                                     integer=integer)
         elif cmd_name == "read":
             self._apply_read(node)
@@ -514,6 +531,21 @@ class VarFlow:
         if node is None or isinstance(node, str):
             return
         k = node.kind
+        if k == "T_Literal" or k == "T_SingleQuoted" or k == "T_Glob":
+            return
+        if k == "T_NormalWord":
+            for p in node.parts:
+                kp = p.kind
+                if kp != "T_Literal" and kp != "T_SingleQuoted" \
+                        and kp != "T_Glob":
+                    self.visit_word(p)
+            return
+        if k == "T_DoubleQuoted":
+            for p in node.parts:
+                kp = p.kind
+                if kp != "T_Literal":
+                    self.visit_word(p)
+            return
         if k == "T_DollarBraced":
             name = braced_reference(node.content)
             status, integer = self.ref_status(name)
@@ -544,8 +576,11 @@ class VarFlow:
             self.visit_word(op)
             self._apply_redirect_assign(node)
             return
-        from .shast import iter_children
-        for c in iter_children(node):
+        children = node.children
+        if children is None:
+            from .shast import iter_children
+            children = iter_children(node)
+        for c in children:
             self.visit_word(c)
 
     def visit_arith(self, node):
@@ -576,8 +611,11 @@ class VarFlow:
             for p in node.parts:
                 self.visit_word(p)
             return
-        from .shast import iter_children
-        for c in iter_children(node):
+        children = node.children
+        if children is None:
+            from .shast import iter_children
+            children = iter_children(node)
+        for c in children:
             if c.kind.startswith("TA_"):
                 self.visit_arith(c)
             else:

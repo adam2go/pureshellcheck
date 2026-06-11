@@ -1023,7 +1023,15 @@ class Parser:
         start = self.i
         parts = []
         src, n = self.src, self.n
+        run_match = UNQUOTED_RUN.match
         while self.i < n:
+            m = run_match(src, self.i)
+            if m is not None:
+                parts.append(Node("T_Literal", self.i, m.end(),
+                                  text=m.group(0)))
+                self.i = m.end()
+                if self.i >= n:
+                    break
             c = src[self.i]
             if c in METACHARS or c in stop_chars:
                 if c in "<>" and src[self.i + 1:self.i + 2] == "(" \
@@ -1917,13 +1925,21 @@ def literal_text(word):
     """The literal string of a word made only of literal parts, else None."""
     if word is None or word.kind != "T_NormalWord":
         return None
+    fields = word.fields
+    cached = fields.get("_lit", False)
+    if cached is not False:
+        return cached
     out = []
+    result = None
     for p in word.parts:
         if p.kind == "T_Literal":
             out.append(p.text)
         else:
-            return None
-    return "".join(out)
+            break
+    else:
+        result = "".join(out)
+    fields["_lit"] = result
+    return result
 
 
 def heredoc_delimiter(word):

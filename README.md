@@ -27,10 +27,10 @@ rm -rf $BUILD_DIR/*
   `shellcheck-py` just download the 30 MB Haskell binary — useless in
   WASM, Lambda layers, or hermetic build sandboxes. pureshellcheck is
   ~7000 lines of stdlib-only Python.
-- **In-process speed.** Calling `pureshellcheck.check()` takes ~2 ms for a
-  typical script vs ~40 ms to spawn the shellcheck binary — and it's
-  8–13× faster than the binary even on 1200-line scripts (see
-  [Benchmarks](#benchmarks)).
+- **In-process speed.** Calling `pureshellcheck.check()` takes ~1.3 ms for
+  a typical script vs ~50 ms to spawn the shellcheck binary (38×), and is
+  ~33× faster than the binary even on 1200-line scripts; one-line snippets
+  check in ~40 µs (see [Benchmarks](#benchmarks)).
 - **Verified against the real thing.** Test cases are extracted from
   ShellCheck's own test suite and the output is differentially tested
   against the shellcheck binary on real-world scripts.
@@ -109,19 +109,45 @@ the bash AST if you want to build your own analyses.
 
 ## Benchmarks
 
-Measured with `python tools/bench.py` (median of 7 runs, after verifying
-both tools report identical findings on the workload; CPython 3.12,
-shellcheck 0.11.0, Apple Silicon):
+All numbers: CPython 3.12, shellcheck 0.11.0, Apple Silicon. Two
+experiments, each repeated in 3 independent sessions; medians shown
+(session-to-session spread was < 4% everywhere). In both experiments the
+findings are verified identical **before** any timing.
+
+**vs the shellcheck binary** (`python tools/bench.py`, median of 9 runs
+per session; both tools timed in the same session):
 
 | workload | shellcheck | pureshellcheck | speedup |
 |---|---|---|---|
-| CLI, brew.sh (1216 lines) | 604 ms | 68 ms | **8.9×** |
-| embedded `check()`, brew.sh | 604 ms | 45 ms | **13.3×** |
-| CLI, 75-line script | 42 ms | 24 ms | 1.8× |
-| embedded `check()`, 75-line script | 42 ms | 2.4 ms | **17×** |
+| embedded `check()`, brew.sh (1216 lines) | 720 ms | 21.7 ms | **33×** |
+| embedded `check()`, 263-line script | 113 ms | 5.1 ms | **22×** |
+| embedded `check()`, 75-line script | 51 ms | 1.3 ms | **38×** |
+| CLI end-to-end, brew.sh | 720 ms | 51 ms | **14×** |
+| CLI end-to-end, 75-line script | 51 ms | 28 ms | 1.8× |
 
 The embedded rows are what an agent or editor integration pays per call:
-no process spawn, no binary.
+no process spawn, no binary. A one-line snippet checks in **~40 µs**
+(~25,000 checks/second); throughput on large scripts is ~57k lines/s. CLI
+time is dominated by CPython interpreter startup (~20 ms).
+
+**v0.2.0 vs v0.1.0** (controlled before/after,
+`python tools/bench_compare.py`: baseline wheel from PyPI vs this tree in
+the same interpreter, 25–200 in-process repeats, outputs verified
+identical on every workload):
+
+| workload | v0.1.0 | v0.2.0 | improvement |
+|---|---|---|---|
+| tiny (1 line) | 0.061 ms | 0.037 ms | 1.6× |
+| small (75 lines) | 2.62 ms | 1.30 ms | 2.0× |
+| medium (263 lines) | 9.46 ms | 4.81 ms | 2.0× |
+| large (1216 lines) | 48.6 ms | 21.3 ms | **2.3×** |
+
+The v0.2.0 speedups came from caching the AST child/parent structure and a
+document-order node table (one traversal instead of dozens), making
+variable states immutable tuples so branch snapshots are plain dict
+copies, a banded Levenshtein for SC2153 (fuzz-tested against the
+reference implementation on 20,000 random pairs), and memoizing repeated
+word/command resolution.
 
 ## Compatibility notes
 

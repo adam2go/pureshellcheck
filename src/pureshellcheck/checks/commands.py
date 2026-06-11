@@ -277,7 +277,7 @@ def has_set_e(ctx):
     if SET_E_SHEBANG_RE.search(shebang):
         result = True
     else:
-        for node in walk(ctx.root):
+        for node in ctx.nodes:
             if node.kind != "T_SimpleCommand" or not node.words:
                 continue
             if first_word_basename(node) != "set":

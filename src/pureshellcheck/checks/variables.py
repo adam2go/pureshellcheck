@@ -54,7 +54,7 @@ COMMON_COMMANDS_HINT = frozenset({
 def get_varscan(ctx):
     scan = ctx.cache.get("varscan")
     if scan is None:
-        scan = VarScan(ctx.root, ctx.shell)
+        scan = VarScan(ctx.root, ctx.shell, nodes=ctx.nodes)
         ctx.cache["varscan"] = scan
     return scan
 
@@ -196,21 +196,21 @@ def check_arithmetic_deref(ctx, node):
               " variables.")
 
 
-@tree_check
-def check_assignment_index_deref(ctx, root):
+@node_check("T_Assignment")
+def check_assignment_index_deref(ctx, node):
     # a[$i]=foo for indexed arrays
+    indices = node.get("indices")
+    if not indices:
+        return
     scan = get_varscan(ctx)
-    for node in walk(root):
-        if node.kind != "T_Assignment":
-            continue
-        if node.name in scan.assoc_arrays:
-            continue
-        for idx in node.get("indices", ()):
-            if isinstance(idx, str) \
-                    and re.fullmatch(r"\$\{?[A-Za-z_][A-Za-z0-9_]*\}?",
-                                     idx.strip()):
-                ctx.style(node, 2004, "$/${} is unnecessary on arithmetic"
-                          " variables.")
+    if node.name in scan.assoc_arrays:
+        return
+    for idx in indices:
+        if isinstance(idx, str) \
+                and re.fullmatch(r"\$\{?[A-Za-z_][A-Za-z0-9_]*\}?",
+                                 idx.strip()):
+            ctx.style(node, 2004, "$/${} is unnecessary on arithmetic"
+                      " variables.")
 
 
 def _in_let(node):

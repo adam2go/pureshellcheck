@@ -81,6 +81,7 @@ class Context:
         self.positions = Positions(source)
         self.findings = []
         self.cache = {}
+        self.nodes = None  # doc-order node list, set by run_checks
 
     # -- emission ------------------------------------------------------
 
@@ -125,6 +126,14 @@ class Context:
 
     def command_resolution(self, cmd):
         """(name_word, index, wrapper_names) after skipping wrappers."""
+        cached = cmd.fields.get("_cmdres")
+        if cached is not None:
+            return cached
+        result = self._command_resolution(cmd)
+        cmd.fields["_cmdres"] = result
+        return result
+
+    def _command_resolution(self, cmd):
         if cmd.kind != "T_SimpleCommand" or not cmd.words:
             return None, -1, []
         words = cmd.words
@@ -279,13 +288,24 @@ class Context:
         return "other", None
 
 
-def statement_lists(root):
+STATEMENT_CONTAINER_KINDS = frozenset({
+    "T_Script", "T_BraceGroup", "T_Subshell", "T_WhileExpression",
+    "T_UntilExpression", "T_ForIn", "T_ForArithmetic", "T_SelectIn",
+    "T_IfExpression", "T_CaseItem", "T_DollarExpansion", "T_Backticked",
+    "T_ProcSub", "T_DollarBraceCommandExpansion", "T_CoProc", "T_BatsTest",
+})
+
+
+def statement_lists(nodes):
     """Yield every list of statement nodes in the tree."""
-    for node in walk(root):
+    container = STATEMENT_CONTAINER_KINDS
+    for node in nodes:
+        if node.kind not in container:
+            continue
         f = node.fields
-        for key in ("commands", "body", "condition", "else_body", "init"):
+        for key in ("commands", "body", "condition", "else_body"):
             v = f.get(key)
-            if isinstance(v, list) and v and isinstance(v[0], object):
+            if type(v) is list and v:
                 yield v
         branches = f.get("branches")
         if branches:
@@ -294,14 +314,14 @@ def statement_lists(root):
                 yield body
 
 
-def apply_directives(findings, directives, root, source, positions):
+def apply_directives(findings, directives, nodes, source, positions):
     """Filter findings according to `# shellcheck disable=` directives."""
     if not directives:
         return findings
     # statements eligible as directive targets, sorted by position
     statements = []
     seen = set()
-    for lst in statement_lists(root):
+    for lst in statement_lists(nodes):
         for node in lst:
             if id(node) not in seen:
                 seen.add(id(node))
@@ -372,7 +392,7 @@ def run_checks(source, shell=None, include_optional=False,
                     min(e.pos + 1, len(source)))
         f.locate(Positions(source))
         return [f], e
-    set_parents(root)
+    nodes = set_parents(root)
 
     detected = shell_from_shebang(root.get("shebang"))
     directives = parser.directives
@@ -386,16 +406,18 @@ def run_checks(source, shell=None, include_optional=False,
     ctx.detected_shell = detected
     ctx.explicit_shell = shell
     ctx.directives = directives
+    ctx.nodes = nodes
 
-    for node in walk(root):
-        fns = NODE_CHECKS.get(node.kind)
+    get_checks = NODE_CHECKS.get
+    for node in nodes:
+        fns = get_checks(node.kind)
         if fns:
             for fn in fns:
                 fn(ctx, node)
     for fn in TREE_CHECKS:
         fn(ctx, root)
 
-    findings = apply_directives(ctx.findings, directives, root, source,
+    findings = apply_directives(ctx.findings, directives, nodes, source,
                                 ctx.positions)
     findings.sort(key=lambda f: (f.pos, f.code))
     for f in findings:

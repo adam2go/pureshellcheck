@@ -6,7 +6,7 @@ common checks.
 ...     print(finding.line, finding.column, finding.code, finding.message)
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from .analyzer import Finding, run_checks  # noqa: F401
 from .parser import ParseError, parse  # noqa: F401

@@ -94,7 +94,7 @@ def _has_execfail(ctx):
         if ctx.shell in ("sh", "dash", "ash"):
             ctx.cache["execfail"] = False
             return False
-        for n in walk(ctx.root):
+        for n in ctx.nodes:
             if n.kind == "T_SimpleCommand" and \
                     first_word_basename(n) == "shopt":
                 if any(word_approx(w) == "execfail" for w in n.words[1:]):

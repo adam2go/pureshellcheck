@@ -1,6 +1,7 @@
 """Shared AST analysis helpers, ported from ShellCheck's ASTLib semantics."""
 
 import re
+from functools import lru_cache
 
 from .shast import ancestors, walk
 from .parser import literal_text, quoted_literal_text
@@ -108,6 +109,7 @@ def is_glob_free_literal(text):
 # ----------------------------------------------------------------------
 # ${...} decomposition
 
+@lru_cache(maxsize=4096)
 def braced_reference(content):
     """The variable name referenced by ${content}."""
     s = content
@@ -119,6 +121,7 @@ def braced_reference(content):
     return m.group(0) if m else s
 
 
+@lru_cache(maxsize=4096)
 def braced_modifier(content):
     """Everything after the name/indices in ${content}."""
     s = content

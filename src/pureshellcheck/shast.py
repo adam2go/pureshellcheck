@@ -13,7 +13,7 @@ import bisect
 
 
 class Node:
-    __slots__ = ("kind", "pos", "end", "parent", "fields")
+    __slots__ = ("kind", "pos", "end", "parent", "fields", "children")
 
     def __init__(self, kind, pos, end, **fields):
         self.kind = kind
@@ -21,6 +21,7 @@ class Node:
         self.end = end
         self.parent = None
         self.fields = fields
+        self.children = None  # filled by set_parents
 
     def __getattr__(self, name):
         try:
@@ -70,18 +71,56 @@ def iter_children(node):
 def walk(node):
     """Yield node and all descendants in document order."""
     stack = [node]
+    pop = stack.pop
     while stack:
-        n = stack.pop()
+        n = pop()
         yield n
-        children = list(iter_children(n))
-        children.reverse()
-        stack.extend(children)
+        children = n.children
+        if children is None:
+            children = list(iter_children(n))
+        if children:
+            stack.extend(reversed(children))
 
 
 def set_parents(root):
-    for n in walk(root):
-        for c in iter_children(n):
+    """Link parents, cache children, and return all nodes in doc order."""
+    nodes = []
+    append = nodes.append
+    stack = [root]
+    pop = stack.pop
+    while stack:
+        n = pop()
+        append(n)
+        children = []
+        add = children.append
+        for value in n.fields.values():
+            tv = type(value)
+            if tv is Node:
+                add(value)
+            elif tv is list:
+                for item in value:
+                    ti = type(item)
+                    if ti is Node:
+                        add(item)
+                    elif ti is list or ti is tuple:
+                        for sub in item:
+                            ts = type(sub)
+                            if ts is Node:
+                                add(sub)
+                            elif ts is list:
+                                for s2 in sub:
+                                    if type(s2) is Node:
+                                        add(s2)
+            elif tv is tuple:
+                for item in value:
+                    if type(item) is Node:
+                        add(item)
+        n.children = children
+        for c in children:
             c.parent = n
+        if children:
+            stack.extend(reversed(children))
+    return nodes
 
 
 def ancestors(node):
