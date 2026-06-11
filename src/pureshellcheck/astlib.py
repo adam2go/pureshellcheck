@@ -50,6 +50,11 @@ def expanded_parts(word):
 
 def is_constant(word):
     """True if the word contains no expansions at all (quotes ok)."""
+    if word.kind == "T_NormalWord" and word.parts:
+        first = word.parts[0]
+        if first.kind == "T_Literal" and first.text.startswith("~") \
+                and not first.get("escaped"):
+            return False  # tilde expansion
     for n in walk(word):
         if n.kind in EXPANSION_KINDS:
             return False
