@@ -82,15 +82,28 @@ def walk(node):
             stack.extend(reversed(children))
 
 
+# Node kinds whose fields can never contain child nodes.
+LEAF_KINDS = frozenset({
+    "T_Literal", "T_SingleQuoted", "T_DollarSingleQuoted", "T_Glob",
+    "TA_Literal", "TA_Empty", "T_IoDuplicate", "TC_Empty",
+})
+
+_EMPTY = ()
+
+
 def set_parents(root):
     """Link parents, cache children, and return all nodes in doc order."""
     nodes = []
     append = nodes.append
     stack = [root]
     pop = stack.pop
+    leaf = LEAF_KINDS
     while stack:
         n = pop()
         append(n)
+        if n.kind in leaf:
+            n.children = _EMPTY
+            continue
         children = []
         add = children.append
         for value in n.fields.values():

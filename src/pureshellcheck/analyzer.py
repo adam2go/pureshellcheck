@@ -382,6 +382,8 @@ def apply_directives(findings, directives, nodes, source, positions):
 def run_checks(source, shell=None, include_optional=False,
                filename="<stdin>"):
     """Parse and analyze a script. Returns (findings, parse_error|None)."""
+    if source and source[0] == chr(0xFEFF):
+        source = source[1:]  # tolerate a UTF-8 BOM
     parser = Parser(source)
     try:
         root = parser.parse()

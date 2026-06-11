@@ -116,3 +116,25 @@ def test_cli_shell_flag():
 def test_cli_missing_file():
     r = run_cli(["/nonexistent/file.sh"])
     assert r.returncode == 2
+
+
+def test_cli_options_after_positional(tmp_path):
+    # argparse before Python 3.12 stops parsing options after positionals;
+    # the CLI reorders argv so `pureshellcheck file -f gcc` works everywhere
+    f = tmp_path / "x.sh"
+    f.write_text("#!/bin/bash\necho $foo\n")
+    r = run_cli([str(f), "-f", "gcc"])
+    assert r.returncode == 1
+    assert "[SC2086]" in r.stdout
+    r = run_cli([str(f), "-e", "SC2086,SC2154"])
+    assert r.returncode == 0
+
+
+def test_bom_tolerated(tmp_path):
+    src = "﻿#!/bin/bash\necho $foo\n"
+    assert 2148 not in codes(src)  # shebang still detected behind the BOM
+    assert 2086 in codes(src)
+    f = tmp_path / "bom.sh"
+    f.write_bytes(src.encode("utf-8"))
+    r = run_cli(["-f", "gcc", str(f)])
+    assert "[SC2086]" in r.stdout and "SC2148" not in r.stdout

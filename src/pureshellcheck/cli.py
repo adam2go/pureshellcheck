@@ -1,7 +1,6 @@
 """Command line interface, modeled on shellcheck's."""
 
 import argparse
-import json
 import sys
 
 from . import __version__, run_checks
@@ -17,6 +16,38 @@ COLORS = {
     "source": "",
     "reset": "\x1b[0m",
 }
+
+
+_TAKES_ONE = {"-s", "--shell", "-f", "--format", "-e", "--exclude",
+              "-S", "--severity", "-o", "--enable"}
+_COLOR_VALUES = {"auto", "always", "never"}
+
+
+def _reorder(argv):
+    """Let options appear after files, like shellcheck: before Python 3.12,
+    argparse stops recognizing options once positionals begin, so
+    `pureshellcheck foo.sh -f gcc` would fail there. Deterministically sort
+    options to the front."""
+    opts, pos = [], []
+    i, n = 0, len(argv)
+    while i < n:
+        a = argv[i]
+        if a == "--":
+            pos.extend(argv[i + 1:])
+            break
+        if a.startswith("-") and a != "-":
+            take = 2 if a in _TAKES_ONE and i + 1 < n else 1
+            if a in ("-C", "--color") and i + 1 < n \
+                    and argv[i + 1] in _COLOR_VALUES:
+                take = 2
+            opts.extend(argv[i:i + take])
+            i += take
+        else:
+            pos.append(a)
+            i += 1
+    if any(p.startswith("-") and p != "-" for p in pos):
+        pos.insert(0, "--")
+    return opts + pos
 
 
 def parse_args(argv):
@@ -45,7 +76,7 @@ def parse_args(argv):
                    help="use color (default: auto)")
     p.add_argument("--version", action="version",
                    version="pureshellcheck %s" % __version__)
-    return p.parse_args(argv)
+    return p.parse_args(_reorder(argv))
 
 
 def parse_excludes(items):
@@ -65,7 +96,9 @@ def check_file(path, args, excluded, min_rank):
         source = sys.stdin.read()
         name = "-"
     else:
-        with open(path, encoding="utf-8", errors="replace") as f:
+        # utf-8-sig: tolerate a UTF-8 BOM, which would otherwise break
+        # shebang detection
+        with open(path, encoding="utf-8-sig", errors="replace") as f:
             source = f.read()
         name = path
     shell = args.shell if args.shell != "busybox" else "ash"
@@ -148,9 +181,11 @@ def main(argv=None):
         else:
             json_items.extend(finding_json(name, f) for f in findings)
     if args.format == "json":
+        import json
         json.dump(json_items, out)
         out.write("\n")
     elif args.format == "json1":
+        import json
         json.dump({"comments": json_items}, out)
         out.write("\n")
     if had_error:

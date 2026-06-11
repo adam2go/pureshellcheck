@@ -130,24 +130,25 @@ no process spawn, no binary. A one-line snippet checks in **~40 µs**
 (~25,000 checks/second); throughput on large scripts is ~57k lines/s. CLI
 time is dominated by CPython interpreter startup (~20 ms).
 
-**v0.2.0 vs v0.1.0** (controlled before/after,
+**v0.2.x vs v0.1.0** (controlled before/after,
 `python tools/bench_compare.py`: baseline wheel from PyPI vs this tree in
 the same interpreter, 25–200 in-process repeats, outputs verified
 identical on every workload):
 
-| workload | v0.1.0 | v0.2.0 | improvement |
+| workload | v0.1.0 | v0.2.1 | improvement |
 |---|---|---|---|
-| tiny (1 line) | 0.061 ms | 0.037 ms | 1.6× |
-| small (75 lines) | 2.62 ms | 1.30 ms | 2.0× |
-| medium (263 lines) | 9.46 ms | 4.81 ms | 2.0× |
-| large (1216 lines) | 48.6 ms | 21.3 ms | **2.3×** |
+| tiny (1 line) | 0.058 ms | 0.036 ms | 1.6× |
+| small (75 lines) | 2.44 ms | 1.21 ms | 2.0× |
+| medium (263 lines) | 8.76 ms | 4.48 ms | 2.0× |
+| large (1216 lines) | 46.2 ms | 20.0 ms | **2.3×** |
 
-The v0.2.0 speedups came from caching the AST child/parent structure and a
+The speedups came from caching the AST child/parent structure and a
 document-order node table (one traversal instead of dozens), making
 variable states immutable tuples so branch snapshots are plain dict
-copies, a banded Levenshtein for SC2153 (fuzz-tested against the
-reference implementation on 20,000 random pairs), and memoizing repeated
-word/command resolution.
+copies, a leaf-node fast path, a banded Levenshtein for SC2153
+(fuzz-tested against the reference implementation on 20,000 random
+pairs), and memoizing repeated word/command resolution. Package import is
+3.6 ms; remaining CLI latency is CPython interpreter startup.
 
 ## Compatibility notes
 
