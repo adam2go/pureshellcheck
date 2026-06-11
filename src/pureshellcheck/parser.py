@@ -1113,7 +1113,7 @@ class Parser:
                 else:
                     parts.append(part)
             elif c == "`":
-                parts.append(self.read_backticked())
+                parts.append(self.read_backticked(in_dquote=True))
             elif c == "\\":
                 nxt = src[self.i + 1:self.i + 2]
                 if nxt in '"$`\\':
@@ -1268,14 +1268,15 @@ class Parser:
         return Node("T_DollarSingleQuoted", start, self.i,
                     text=src[start + 1:j])
 
-    def read_backticked(self):
+    def read_backticked(self, in_dquote=False):
         start = self.i
         src, n = self.src, self.n
         j = self.i + 1
+        escapable = '$`\\"' if in_dquote else "$`\\"
         chars = []
         while j < n:
             c = src[j]
-            if c == "\\" and j + 1 < n and src[j + 1] in "$`\\":
+            if c == "\\" and j + 1 < n and src[j + 1] in escapable:
                 chars.append(src[j + 1])
                 j += 2
             elif c == "`":
@@ -1417,8 +1418,19 @@ class Parser:
             j += 1
         if has_sep and depth == 0 and j > self.i and src[j - 1] == "}":
             text = src[start:j]
+            inner = text[1:-1]
+            sub = Parser(inner)
+            try:
+                word = sub.read_word()
+                parts = word.parts if word is not None and sub.at_end() \
+                    else []
+            except ParseError:
+                parts = []
+            for p in parts:
+                shift_node(p, start + 1)
             self.i = j
-            return Node("T_BraceExpansion", start, j, text=text)
+            return Node("T_BraceExpansion", start, j, text=text,
+                        parts=parts)
         self.i = start + 1
         return Node("T_Literal", start, self.i, text="{")
 

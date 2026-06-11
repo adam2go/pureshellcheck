@@ -7138,6 +7138,16 @@
   "script": "var=howdy; printf -v 'array[0]' %s \"$var\"; printf %s \"${array[0]}\";"
  },
  {
+  "id": "checkUnassignedReferences38",
+  "file": "Analytics.hs",
+  "check": "checkUnassignedReferences",
+  "expect": "trigger",
+  "codes": [
+   2154
+  ],
+  "script": "echo $VAR"
+ },
+ {
   "id": "checkUnassignedReferences39",
   "file": "Analytics.hs",
   "check": "checkUnassignedReferences",
@@ -15467,6 +15477,76 @@
   "script": "f() { local foo=3; }"
  },
  {
+  "id": "checkMultipleDeclaring1",
+  "file": "Commands.hs",
+  "check": "checkMultipleDeclaring",
+  "expect": "trigger",
+  "codes": [
+   2316
+  ],
+  "script": "q() { local readonly var=1; }"
+ },
+ {
+  "id": "checkMultipleDeclaring2",
+  "file": "Commands.hs",
+  "check": "checkMultipleDeclaring",
+  "expect": "no-trigger",
+  "codes": [
+   2316
+  ],
+  "script": "q() { local var=1; }"
+ },
+ {
+  "id": "checkMultipleDeclaring3",
+  "file": "Commands.hs",
+  "check": "checkMultipleDeclaring",
+  "expect": "trigger",
+  "codes": [
+   2316
+  ],
+  "script": "readonly local foo=5"
+ },
+ {
+  "id": "checkMultipleDeclaring4",
+  "file": "Commands.hs",
+  "check": "checkMultipleDeclaring",
+  "expect": "trigger",
+  "codes": [
+   2316
+  ],
+  "script": "export readonly foo=5"
+ },
+ {
+  "id": "checkMultipleDeclaring5",
+  "file": "Commands.hs",
+  "check": "checkMultipleDeclaring",
+  "expect": "no-trigger",
+  "codes": [
+   2316
+  ],
+  "script": "f() { local -r foo=5; }"
+ },
+ {
+  "id": "checkMultipleDeclaring6",
+  "file": "Commands.hs",
+  "check": "checkMultipleDeclaring",
+  "expect": "no-trigger",
+  "codes": [
+   2316
+  ],
+  "script": "declare -rx foo=5"
+ },
+ {
+  "id": "checkMultipleDeclaring7",
+  "file": "Commands.hs",
+  "check": "checkMultipleDeclaring",
+  "expect": "no-trigger",
+  "codes": [
+   2316
+  ],
+  "script": "readonly 'local' foo=5"
+ },
+ {
   "id": "checkDeprecatedTempfile1",
   "file": "Commands.hs",
   "check": "checkDeprecatedTempfile",
@@ -15896,6 +15976,146 @@
   "script": "which '.+'"
  },
  {
+  "id": "checkSudoRedirect1",
+  "file": "Commands.hs",
+  "check": "checkSudoRedirect",
+  "expect": "trigger",
+  "codes": [
+   2024
+  ],
+  "script": "sudo echo 3 > /proc/file"
+ },
+ {
+  "id": "checkSudoRedirect2",
+  "file": "Commands.hs",
+  "check": "checkSudoRedirect",
+  "expect": "trigger",
+  "codes": [
+   2024
+  ],
+  "script": "doas cmd < input"
+ },
+ {
+  "id": "checkSudoRedirect3",
+  "file": "Commands.hs",
+  "check": "checkSudoRedirect",
+  "expect": "trigger",
+  "codes": [
+   2024
+  ],
+  "script": "run0 cmd >> file"
+ },
+ {
+  "id": "checkSudoRedirect4",
+  "file": "Commands.hs",
+  "check": "checkSudoRedirect",
+  "expect": "trigger",
+  "codes": [
+   2024
+  ],
+  "script": "sudo cmd &> file"
+ },
+ {
+  "id": "checkSudoRedirect5",
+  "file": "Commands.hs",
+  "check": "checkSudoRedirect",
+  "expect": "no-trigger",
+  "codes": [
+   2024
+  ],
+  "script": "sudo cmd 2>&1"
+ },
+ {
+  "id": "checkSudoRedirect6",
+  "file": "Commands.hs",
+  "check": "checkSudoRedirect",
+  "expect": "no-trigger",
+  "codes": [
+   2024
+  ],
+  "script": "doas cmd 2> log"
+ },
+ {
+  "id": "checkSudoRedirect7",
+  "file": "Commands.hs",
+  "check": "checkSudoRedirect",
+  "expect": "no-trigger",
+  "codes": [
+   2024
+  ],
+  "script": "run0 cmd > /dev/null 2>&1"
+ },
+ {
+  "id": "checkSudoArgs1",
+  "file": "Commands.hs",
+  "check": "checkSudoArgs",
+  "expect": "trigger",
+  "codes": [
+   2232
+  ],
+  "script": "sudo cd /root"
+ },
+ {
+  "id": "checkSudoArgs2",
+  "file": "Commands.hs",
+  "check": "checkSudoArgs",
+  "expect": "trigger",
+  "codes": [
+   2232
+  ],
+  "script": "run0 export x=3"
+ },
+ {
+  "id": "checkSudoArgs3",
+  "file": "Commands.hs",
+  "check": "checkSudoArgs",
+  "expect": "no-trigger",
+  "codes": [
+   2232
+  ],
+  "script": "sudo ls /usr/local/protected"
+ },
+ {
+  "id": "checkSudoArgs4",
+  "file": "Commands.hs",
+  "check": "checkSudoArgs",
+  "expect": "no-trigger",
+  "codes": [
+   2232
+  ],
+  "script": "doas ls && export x=3"
+ },
+ {
+  "id": "checkSudoArgs5",
+  "file": "Commands.hs",
+  "check": "checkSudoArgs",
+  "expect": "no-trigger",
+  "codes": [
+   2232
+  ],
+  "script": "sudo echo ls"
+ },
+ {
+  "id": "checkSudoArgs6",
+  "file": "Commands.hs",
+  "check": "checkSudoArgs",
+  "expect": "no-trigger",
+  "codes": [
+   2232
+  ],
+  "script": "sudo -n -u export ls"
+ },
+ {
+  "id": "checkSudoArgs7",
+  "file": "Commands.hs",
+  "check": "checkSudoArgs",
+  "expect": "no-trigger",
+  "codes": [
+   2232
+  ],
+  "script": "sudo docker export foo"
+ },
+ {
   "id": "checkSourceArgs1",
   "file": "Commands.hs",
   "check": "checkSourceArgs",
@@ -16004,6 +16224,226 @@
    2267
   ],
   "script": "xargs -x sed -i foo"
+ },
+ {
+  "id": "checkArgComparison1",
+  "file": "Commands.hs",
+  "check": "checkArgComparison",
+  "expect": "trigger",
+  "codes": [
+   2290
+  ],
+  "script": "declare a = b"
+ },
+ {
+  "id": "checkArgComparison2",
+  "file": "Commands.hs",
+  "check": "checkArgComparison",
+  "expect": "trigger",
+  "codes": [
+   2290
+  ],
+  "script": "declare a =b"
+ },
+ {
+  "id": "checkArgComparison3",
+  "file": "Commands.hs",
+  "check": "checkArgComparison",
+  "expect": "no-trigger",
+  "codes": [
+   2290
+  ],
+  "script": "declare a=b"
+ },
+ {
+  "id": "checkArgComparison4",
+  "file": "Commands.hs",
+  "check": "checkArgComparison",
+  "expect": "trigger",
+  "codes": [
+   2290
+  ],
+  "script": "export a +=b"
+ },
+ {
+  "id": "checkArgComparison7",
+  "file": "Commands.hs",
+  "check": "checkArgComparison",
+  "expect": "no-trigger",
+  "codes": [
+   2290
+  ],
+  "script": "declare -a +i foo"
+ },
+ {
+  "id": "checkArgComparison8",
+  "file": "Commands.hs",
+  "check": "checkArgComparison",
+  "expect": "trigger",
+  "codes": [
+   2290
+  ],
+  "script": "let x = 0"
+ },
+ {
+  "id": "checkArgComparison9",
+  "file": "Commands.hs",
+  "check": "checkArgComparison",
+  "expect": "trigger",
+  "codes": [
+   2290
+  ],
+  "script": "alias x =0"
+ },
+ {
+  "id": "checkMaskedReturns1",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "trigger",
+  "codes": [
+   2155
+  ],
+  "script": "f() { local a=$(false); }"
+ },
+ {
+  "id": "checkMaskedReturns2",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "trigger",
+  "codes": [
+   2155
+  ],
+  "script": "declare a=$(false)"
+ },
+ {
+  "id": "checkMaskedReturns3",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "trigger",
+  "codes": [
+   2155
+  ],
+  "script": "declare a=\"`false`\""
+ },
+ {
+  "id": "checkMaskedReturns4",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "trigger",
+  "codes": [
+   2155
+  ],
+  "script": "readonly a=$(false)"
+ },
+ {
+  "id": "checkMaskedReturns5",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "trigger",
+  "codes": [
+   2155
+  ],
+  "script": "readonly a=\"`false`\""
+ },
+ {
+  "id": "checkMaskedReturns6",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "no-trigger",
+  "codes": [
+   2155
+  ],
+  "script": "declare a; a=$(false)"
+ },
+ {
+  "id": "checkMaskedReturns7",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "no-trigger",
+  "codes": [
+   2155
+  ],
+  "script": "f() { local -r a=$(false); }"
+ },
+ {
+  "id": "checkMaskedReturns8",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "no-trigger",
+  "codes": [
+   2155
+  ],
+  "script": "a=$(false); readonly a"
+ },
+ {
+  "id": "checkMaskedReturns9",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "trigger",
+  "codes": [
+   2155
+  ],
+  "script": "#!/bin/ksh\n f() { typeset -r x=$(false); }"
+ },
+ {
+  "id": "checkMaskedReturns10",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "no-trigger",
+  "codes": [
+   2155
+  ],
+  "script": "#!/bin/ksh\n function f { typeset -r x=$(false); }"
+ },
+ {
+  "id": "checkMaskedReturns11",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "no-trigger",
+  "codes": [
+   2155
+  ],
+  "script": "#!/bin/bash\n f() { typeset -r x=$(false); }"
+ },
+ {
+  "id": "checkMaskedReturns12",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "trigger",
+  "codes": [
+   2155
+  ],
+  "script": "typeset -r x=$(false);"
+ },
+ {
+  "id": "checkMaskedReturns13",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "trigger",
+  "codes": [
+   2155
+  ],
+  "script": "f() { typeset -g x=$(false); }"
+ },
+ {
+  "id": "checkMaskedReturns14",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "trigger",
+  "codes": [
+   2155
+  ],
+  "script": "declare x=${ false; }"
+ },
+ {
+  "id": "checkMaskedReturns15",
+  "file": "Commands.hs",
+  "check": "checkMaskedReturns",
+  "expect": "trigger",
+  "codes": [
+   2155
+  ],
+  "script": "f() { declare x=$(false); }"
  },
  {
   "id": "checkUnquotedEchoSpaces1",
@@ -16119,5 +16559,75 @@
    2294
   ],
   "script": "eval \"$*\""
+ },
+ {
+  "id": "checkBackreferencingDeclaration1",
+  "file": "Commands.hs",
+  "check": "checkBackreferencingDeclaration",
+  "expect": "trigger",
+  "codes": [
+   2318
+  ],
+  "script": "declare x=1 y=foo$x"
+ },
+ {
+  "id": "checkBackreferencingDeclaration2",
+  "file": "Commands.hs",
+  "check": "checkBackreferencingDeclaration",
+  "expect": "trigger",
+  "codes": [
+   2318
+  ],
+  "script": "readonly x=1 y=$((1+x))"
+ },
+ {
+  "id": "checkBackreferencingDeclaration3",
+  "file": "Commands.hs",
+  "check": "checkBackreferencingDeclaration",
+  "expect": "trigger",
+  "codes": [
+   2318
+  ],
+  "script": "local x=1 y=$(echo $x)"
+ },
+ {
+  "id": "checkBackreferencingDeclaration4",
+  "file": "Commands.hs",
+  "check": "checkBackreferencingDeclaration",
+  "expect": "trigger",
+  "codes": [
+   2318
+  ],
+  "script": "local x=1 y[$x]=z"
+ },
+ {
+  "id": "checkBackreferencingDeclaration5",
+  "file": "Commands.hs",
+  "check": "checkBackreferencingDeclaration",
+  "expect": "trigger",
+  "codes": [
+   2318
+  ],
+  "script": "declare x=var $x=1"
+ },
+ {
+  "id": "checkBackreferencingDeclaration6",
+  "file": "Commands.hs",
+  "check": "checkBackreferencingDeclaration",
+  "expect": "trigger",
+  "codes": [
+   2318
+  ],
+  "script": "declare x=var $x=1"
+ },
+ {
+  "id": "checkBackreferencingDeclaration7",
+  "file": "Commands.hs",
+  "check": "checkBackreferencingDeclaration",
+  "expect": "trigger",
+  "codes": [
+   2318
+  ],
+  "script": "declare x=var $k=$x"
  }
 ]

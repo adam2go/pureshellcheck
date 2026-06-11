@@ -24,7 +24,7 @@ SOURCES = [
 
 PROP_RE = re.compile(
     r"^prop_(\w+'?)\s*=\s*(verifyNotTree|verifyTree|verifyNot|verify|verifyCodes)"
-    r"\s+(\w+)\s+(.*)$"
+    r"\s+(?:(\w+)|\((\w+)[^)]*\))\s+(.*)$"
 )
 TOPLEVEL_DEF_RE = re.compile(r"^([a-z]\w*'?)\s")
 CODE_RE = re.compile(r"(?<![\d.])([123]\d{3})(?![\d.])")
@@ -187,7 +187,8 @@ def main():
             m = PROP_RE.match(line)
             if not m:
                 continue
-            name, op, func, rest = m.groups()
+            name, op, func, func_paren, rest = m.groups()
+            func = func or func_paren
             rest = rest.replace("\n", " ").strip()
             codes = None
             if op == "verifyCodes":
