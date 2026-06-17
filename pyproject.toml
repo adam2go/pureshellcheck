@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pureshellcheck"
-version = "0.2.1"
+version = "0.2.2"
 description = "A pure Python reimplementation of ShellCheck's most common checks"
 readme = "README.md"
 requires-python = ">=3.9"

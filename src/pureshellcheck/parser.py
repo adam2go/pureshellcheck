@@ -22,6 +22,15 @@ END_KEYWORDS = {
 # Characters that terminate an unquoted word.
 METACHARS = " \t\n;&|<>()"
 
+# Cap on nested constructs - subshells "(", command substitutions "$(",
+# brace/arithmetic groups - which re-enter read_command or read_arith_primary.
+# Arithmetic nesting is the most frame-hungry (its precedence chain adds ~15
+# interpreter frames per level), so 40 trips at ~600 frames: comfortably under
+# CPython's default 1000 limit on every platform (including Windows' ~1 MB
+# stack) even from a deep call site, yet far above any real script. Deeply
+# nested input like "$( $( $(" or "(((((" raises a clean ParseError.
+MAX_NESTING = 40
+
 UNQUOTED_RUN = re.compile(r"""[^\\'"$`*?\[\](){}<>|&;\s!#~]+""")
 DQUOTE_RUN = re.compile(r'[^"\\$`]+')
 SQUOTE_END = re.compile(r"'")
@@ -81,6 +90,17 @@ class ParseError(Exception):
         self.code = code
 
 
+class _NestingLimit(Exception):
+    """Raised when input nests deeper than MAX_NESTING. Deliberately NOT a
+    ParseError so the parser's backtracking (which catches ParseError to try
+    alternatives) cannot swallow it; parse() turns it into a ParseError."""
+
+    def __init__(self, message, pos):
+        super().__init__(message)
+        self.message = message
+        self.pos = pos
+
+
 class Directive:
     """A `# shellcheck key=value` comment."""
 
@@ -104,6 +124,11 @@ class Parser:
         self.pending_heredocs = []
         self.directives = []
         self.line_had_command = False
+        # Smallest index from which a glob-class scan reached EOF with no
+        # closing ']' or metachar; from there on every '[' is a literal.
+        # Caps the otherwise O(n^2) rescan on input like "[1,[1,[1,...".
+        self._glob_eof_from = self.n + 1
+        self._nesting = 0  # current compound-command nesting depth
 
     # ------------------------------------------------------------------
     # Low-level helpers
@@ -192,6 +217,13 @@ class Parser:
     # Script / lists
 
     def parse(self):
+        try:
+            return self._parse()
+        except _NestingLimit as e:
+            # Surface the internal depth-limit signal as the public error type.
+            raise ParseError(e.message, e.pos) from None
+
+    def _parse(self):
         shebang = None
         if self.src.startswith("#!"):
             end = self.src.find("\n")
@@ -340,6 +372,20 @@ class Parser:
     # Commands
 
     def read_command(self):
+        # Every nested compound command - subshell, command substitution,
+        # brace/arithmetic group - re-enters here, so this bounds parser
+        # recursion and keeps adversarial input from overflowing the stack.
+        self._nesting += 1
+        if self._nesting > MAX_NESTING:
+            self._nesting -= 1
+            raise _NestingLimit("commands nested too deeply (over %d levels)"
+                                % MAX_NESTING, self.i)
+        try:
+            return self._read_command()
+        finally:
+            self._nesting -= 1
+
+    def _read_command(self):
         self.skip_inline_ws()
         if self.at_end():
             return None
@@ -1366,11 +1412,17 @@ class Parser:
         """Parse [...] as a glob character class, else literal '['."""
         src, n = self.src, self.n
         start = self.i
+        # We already proved the rest of the input has no closing ']' (nor a
+        # metachar) from an earlier '['; this one can't open a class either.
+        if start >= self._glob_eof_from:
+            self.i = start + 1
+            return Node("T_Literal", start, self.i, text="[")
         j = self.i + 1
         if j < n and src[j] in "!^":
             j += 1
         if j < n and src[j] == "]":
             j += 1
+        jumped = False
         while j < n:
             c = src[j]
             if c == "]":
@@ -1384,8 +1436,15 @@ class Parser:
                 if end == -1:
                     break
                 j = end + 2
+                jumped = True
                 continue
             j += 1
+        else:
+            # Reached EOF with no ']' or metachar. Unless a [:class:] jump
+            # skipped over text, no later '[' can find one either - remember
+            # it so the next '[' bails in O(1).
+            if not jumped:
+                self._glob_eof_from = start
         self.i = start + 1
         return Node("T_Literal", start, self.i, text="[")
 
@@ -1842,6 +1901,20 @@ class Parser:
                 return operand
 
     def read_arith_primary(self):
+        # Nested "(...)" in arithmetic re-enters here, a separate recursion
+        # from read_command, so it shares the same nesting guard to keep
+        # "(((((..." / "$((((..." from overflowing the stack.
+        self._nesting += 1
+        if self._nesting > MAX_NESTING:
+            self._nesting -= 1
+            raise _NestingLimit("arithmetic nested too deeply (over %d levels)"
+                                % MAX_NESTING, self.i)
+        try:
+            return self._read_arith_primary()
+        finally:
+            self._nesting -= 1
+
+    def _read_arith_primary(self):
         self.skip_arith_ws()
         start = self.i
         src, n = self.src, self.n
