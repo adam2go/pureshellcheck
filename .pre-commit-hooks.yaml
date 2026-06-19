@@ -1,0 +1,5 @@
+-   id: pureshellcheck
+    name: pureshellcheck
+    description: "Pure Python reimplementation of ShellCheck's most common checks - no binaries, works in WASM/Lambda/sandboxes."
+    entry: pureshellcheck
+    language: python
