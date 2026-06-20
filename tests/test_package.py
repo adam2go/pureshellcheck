@@ -138,3 +138,85 @@ def test_bom_tolerated(tmp_path):
     f.write_bytes(src.encode("utf-8"))
     r = run_cli(["-f", "gcc", str(f)])
     assert "[SC2086]" in r.stdout and "SC2148" not in r.stdout
+
+
+def test_case_catchall_extended_analysis():
+    """Variables assigned in all case branches (with *) don't trigger SC2086."""
+    src = """#!/bin/sh
+c=abc
+case $c in
+    foo)
+        var=bar1
+        ;;
+    *)
+        var=bar2
+        ;;
+esac
+echo $var
+"""
+    assert 2086 not in codes(src)
+
+
+def test_case_no_catchall_warns():
+    """Variables assigned in incomplete case branches still trigger SC2086."""
+    src = """#!/bin/sh
+c=abc
+case $c in
+    foo)
+        var=bar1
+        ;;
+    baz)
+        var=bar2
+        ;;
+esac
+echo $var
+"""
+    assert 2086 in codes(src)
+
+
+def test_case_partial_glob_warns():
+    """Partial glob patterns like foo* don't count as catch-all."""
+    src = """#!/bin/sh
+case $c in
+    foo*)
+        var=bar
+        ;;
+esac
+echo $var
+"""
+    assert 2086 in codes(src)
+
+
+def test_case_catchall_in_multi_pattern():
+    """Catch-all * within a pattern list (foo|*) works correctly."""
+    src = """#!/bin/sh
+case $c in
+    foo|bar|*)
+        var=bar
+        ;;
+esac
+echo $var
+"""
+    assert 2086 not in codes(src)
+
+
+def test_case_catchall_multiple_branches():
+    """Catch-all * in multi-branch case statement works correctly."""
+    src = """#!/bin/sh
+case $c in
+    foo)
+        var=bar1
+        ;;
+    bar)
+        var=bar2
+        ;;
+    baz)
+        var=bar3
+        ;;
+    *)
+        var=bar4
+        ;;
+esac
+echo $var
+"""
+    assert 2086 not in codes(src)

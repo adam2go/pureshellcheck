@@ -447,7 +447,10 @@ class VarFlow:
 
     def _do_T_CaseExpression(self, node):
         self.visit_word(node.word)
-        snaps = [self.snapshot()]
+        has_catchall = any(self._is_catchall_pattern(p)
+                          for item in node.items
+                          for p in item.patterns)
+        snaps = [] if has_catchall else [self.snapshot()]
         for item in node.items:
             for p in item.patterns:
                 self.visit_word(p)
@@ -458,6 +461,16 @@ class VarFlow:
             self.restore(before)
         self.merge_snapshots(snaps)
         return False
+
+    def _is_catchall_pattern(self, pattern):
+        """Check if a case pattern is a catch-all like *."""
+        if pattern.kind != "T_NormalWord":
+            return False
+        parts = pattern.parts
+        if len(parts) != 1:
+            return False
+        part = parts[0]
+        return part.kind == "T_Glob" and part.text == "*"
 
     def _do_T_BraceGroup(self, node):
         return self.process_statements(node.commands)
