@@ -1245,6 +1245,10 @@ class Parser:
             inner.pos = start
             return inner
         if nxt == '"':
+            # When already inside a double-quoted string, $" is not a special
+            # construct - the " is the closing quote of the outer string.
+            if in_dquote:
+                return None
             self.i += 1
             return self.read_double_quoted(dollar=True)
         if nxt == "[":
