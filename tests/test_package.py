@@ -138,3 +138,14 @@ def test_bom_tolerated(tmp_path):
     f.write_bytes(src.encode("utf-8"))
     r = run_cli(["-f", "gcc", str(f)])
     assert "[SC2086]" in r.stdout and "SC2148" not in r.stdout
+
+def test_dollar_at_end_of_double_quoted_string():
+    """Dollar sign at end of double-quoted string should not error."""
+    src = '''#!/bin/sh
+if echo foo | grep -q -E "^foo$"; then
+    echo foo
+fi
+'''
+    # Should parse without error (no SC1073)
+    findings = check(src)
+    assert not any(f.code == 1073 for f in findings)
